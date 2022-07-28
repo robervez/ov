@@ -7,12 +7,12 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 #
 
-from env import JetBotEnv
+from env import FrankaEnv
 from stable_baselines3 import PPO
 
-policy_path = "./cnn_policy/jetbot_policy.zip"
+policy_path = "./cnn_policy/franka_policy_ONLYANGLE_steps.zip"
 
-my_env = JetBotEnv(headless=False)
+my_env = FrankaEnv(headless=False)
 model = PPO.load(policy_path)
 
 for _ in range(20):

@@ -21,14 +21,18 @@ args, unknown = parser.parse_known_args()
 log_dir = "./cnn_policy"
 # set headles to false to visualize training
 headless=False
-my_env = FrankaEnv(headless=headless)
+my_env = FrankaEnv(headless=headless,
+                   seed=232,
+                   physics_dt=1.0 / 60.0,
+                   rendering_dt=1.0/60.0,
+                   skip_frame=10)
 
 
 #policy_kwargs = dict(activation_fn=th.nn.Tanh)
 policy_kwargs = dict(activation_fn=th.nn.ReLU,
                      net_arch=[dict(pi=[32, 32,32], vf=[32, 32,32])])
 policy = MlpPolicy
-total_timesteps = 800000
+total_timesteps = 500000
 
 if args.test is True:
     total_timesteps = 10000
@@ -49,6 +53,7 @@ model = PPO(
     vf_coef=0.5,
     max_grad_norm=10,
     tensorboard_log=log_dir,
+
 )
 
 try:

@@ -1,5 +1,7 @@
-from omni.isaac.kit import SimulationApp
-
+from omni.isaac.core.utils.nucleus import get_assets_root_path
+from omni.isaac.core.utils.stage import add_reference_to_stage
+from omni.isaac.core.articulations import ArticulationView
+from omni.isaac.core.utils.prims import create_prim
 
 import omni.kit
 
@@ -9,19 +11,12 @@ import numpy as np
 import torch
 import math
 
-headless = False
-simulation_app = SimulationApp({"headless": headless, "anti_aliasing": 0})
-
 from omni.isaac.core.tasks.base_task import BaseTask
-
 
 class CartpoleTask(BaseTask):
     def __init__( self,  name, offset=None ) -> None:
 
-        from omni.isaac.core.utils.nucleus import get_assets_root_path
-        from omni.isaac.core.utils.stage import add_reference_to_stage
-        from omni.isaac.core.articulations import ArticulationView
-        from omni.isaac.core.utils.prims import create_prim
+
 
         # task-specific parameters
         self._cartpole_position = [0.0, 0.0, 2.0]

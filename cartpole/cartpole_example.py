@@ -1,15 +1,19 @@
 from omni.isaac.kit import SimulationApp
-from omni.isaac.gym.vec_env import VecEnvBase
-from cartpole_task import CartpoleTask
-from stable_baselines3 import PPO
+
+
+### Perform any omniverse imports here after the helper loads ###
+
+
 
 
 def testPPO():
+    from omni.isaac.gym.vec_env import VecEnvBase
+    from cartpole_task import CartpoleTask
+    from stable_baselines3 import PPO
 
-    env = VecEnvBase(headless=True)
+    env = VecEnvBase(headless=False)
     task = CartpoleTask(name="Cartpole")
     env.set_task(task, backend="torch")
-
 
     # create agent from stable baselines
     model = PPO(
@@ -36,4 +40,7 @@ def testPPO():
 
 
 if __name__=='__main__':
+    # Simple example showing how to start and stop the helper
+    simulation_app = SimulationApp({"headless": False})
+
     testPPO()

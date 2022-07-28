@@ -22,8 +22,8 @@ class FrankaEnv(gym.Env):
         skip_frame=1,
         physics_dt=1.0 / 60.0,
         rendering_dt=1.0 / 60.0,
-        max_episode_length=10000,
-        seed=42,
+        max_episode_length=1000,
+        seed=0,
         headless=True,
     ) -> None:
         from omni.isaac.kit import SimulationApp
@@ -72,7 +72,7 @@ class FrankaEnv(gym.Env):
         self.reward_range = (-float("inf"), float("inf"))
         gym.Env.__init__(self)
         # observation space -> 6 or 12 (if using orientation or not), inside a cube around the robot
-        self.observation_space = spaces.Box(low=-10, high=10, shape=(6,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-1.5, high=1.5, shape=(6,), dtype=np.float32)
         self._my_world.reset()
         self._franka_articulation_controller = self.franka.get_articulation_controller()
         self.maxefforts = self._franka_articulation_controller.get_max_efforts()
@@ -85,6 +85,11 @@ class FrankaEnv(gym.Env):
 
         # 9 dof
         self.action_space = spaces.Box(low=-1, high=1, shape=(9,), dtype=np.float32)
+        #self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(7,), dtype=np.float32)
+        #self.action_space = spaces.Box(
+        #    np.array([-1.0, 0, 0 ,0 ,0,0,0,0,0]),
+        #    np.array([ 1.0, 0, 0 ,0 ,0,0,0,0,0]))
+
         print(self.action_space )
 
         return
@@ -106,11 +111,14 @@ class FrankaEnv(gym.Env):
 
         for i in range(self._skip_frame):
             from omni.isaac.core.utils.types import ArticulationAction
-            #print(action)
+            if RVDEBUG:
+                print(action)
             #print(type(action))
-
+            #print(action)
             #self.franka.apply_action (ArticulationAction(joint_efforts=final_action))
-            self.franka.apply_action(ArticulationAction(joint_velocities=action))
+            self.franka.apply_action(ArticulationAction(joint_velocities=action * 0.5))
+
+            #self.franka.set_joint_positions(self.startpositions[1:], joint_indices=[1, 2, 3, 4, 5, 6, 7, 8])
 
             self._my_world.step(render=False)
         observations = self.get_observations()
@@ -118,25 +126,34 @@ class FrankaEnv(gym.Env):
         done = False
         if self._my_world.current_time_step_index - self._steps_after_reset >= self._max_episode_length:
             done = True
+            print("Done")
         goal_world_position, _ = self.goal.get_world_pose()
-        current_position, _ = self.franka.end_effector.get_world_pose()
+        current_position, current_orientation = self.franka.end_effector.get_world_pose()
         previous_dist_to_goal = np.linalg.norm(goal_world_position - previous_position)
         current_dist_to_goal = np.linalg.norm(goal_world_position - current_position)
-        reward = previous_dist_to_goal - current_dist_to_goal
-        self.goal_world_position = goal_world_position
+
+        # vorrei arrivarci con gripper rivolto verso il basso
+        rewardOrientation = math.exp(-np.dot(current_orientation,self.startendEffectorOrientation))
+
+        reward = previous_dist_to_goal - current_dist_to_goal + rewardOrientation
 
         return observations, reward, done, info
 
     def reset(self):
         print("RESET")
         self._my_world.reset()
+        self._franka_articulation_controller.switch_control_mode('velocity')
+        from omni.isaac.core.utils.types import ArticulationAction
+        self.franka.apply_action(ArticulationAction(joint_velocities=np.zeros(9)))
+
         # randomize goal location in circle around robot
         alpha = 2 * math.pi * np.random.rand()
-        r = 1.00 * math.sqrt(np.random.rand()) + 0.20
+        r = .80 * math.sqrt(np.random.rand()) + 0.20
         self.goal.set_world_pose(np.array([math.sin(alpha) * r, math.cos(alpha) * r, 0.025]))
         observations = self.get_observations()
 
-
+        self.startpositions = self.franka.get_joint_positions()
+        self.startendEffectorOrientation = self.franka.end_effector.get_world_pose()[1]
 
         return observations
 
